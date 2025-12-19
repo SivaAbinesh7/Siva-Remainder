@@ -71,3 +71,22 @@ Yes it is!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## AI Assistant Setup (FREE)
+
+This project includes an AI-powered virtual assistant using **Groq** (100% FREE - no credit card required).
+
+### Quick Setup (5 minutes):
+
+1. Get a FREE API key from [Groq Console](https://console.groq.com/keys)
+2. Run the setup script:
+   ```bash
+   setup-ai.bat
+   ```
+   Or manually create a `.env` file:
+   ```env
+   VITE_GROQ_API_KEY=your-groq-api-key-here
+   ```
+3. Restart the dev server: `npm start`
+
+📖 **Detailed instructions**: See `AI_SETUP.md`
