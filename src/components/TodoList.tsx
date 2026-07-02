@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import TodoItem from './TodoItem';
 import { cn } from '@/lib/utils';
-import { Todo, requestNotificationPermission, checkReminders } from '@/lib/notifications';
+import { Todo, requestNotificationPermission, checkReminders, startHourlyReminder, stopHourlyReminder, restoreHourlyReminders } from '@/lib/notifications';
+import { sendSWMessage, sendSWMessageWhenReady } from '@/lib/serviceWorker';
 
 // Simulate local storage database
 const saveTodos = (todos: Todo[]) => {
@@ -38,12 +39,18 @@ const TodoList: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
-    setTodos(loadTodos());
+    const loaded = loadTodos();
+    setTodos(loaded);
 
     // Check notification permission on mount
     if (Notification.permission === 'granted') {
       setNotificationsEnabled(true);
+      // Restore in-tab hourly reminders
+      restoreHourlyReminders(loaded);
     }
+
+    // Sync all reminders into SW IndexedDB so background notifications work
+    sendSWMessageWhenReady({ type: 'SYNC_ALL', todos: loaded });
   }, []);
 
   // Check reminders every 30 seconds
@@ -74,7 +81,7 @@ const TodoList: React.FC = () => {
     }
   };
 
-  const addTodo = () => {
+  const addTodo = async () => {
     if (newTodoText.trim() === '') {
       toast({
         title: "Can't add empty reminder",
@@ -84,11 +91,16 @@ const TodoList: React.FC = () => {
       return;
     }
 
+    // Auto-request permission if not yet granted
+    if (Notification.permission !== 'granted') {
+      await requestNotificationPermission();
+    }
+
     const newTodo: Todo = {
       id: Date.now().toString(),
       text: newTodoText,
       completed: false,
-      reminderTime: 5, // Default 5 minutes
+      reminderTime: 5,
     };
 
     const updatedTodos = [...todos, newTodo];
@@ -96,21 +108,48 @@ const TodoList: React.FC = () => {
     saveTodos(updatedTodos);
     setNewTodoText('');
 
+    // Start hourly notification for this reminder
+    if (Notification.permission === 'granted') {
+      setNotificationsEnabled(true);
+      startHourlyReminder(newTodo);
+    }
+
+    // Tell the Service Worker to store this reminder for background notifications
+    sendSWMessage({ type: 'ADD_REMINDER', reminder: { ...newTodo, dueDate: newTodo.dueDate?.toISOString() } });
+
     toast({
       title: "✅ Reminder added",
-      description: "Your new reminder has been added. Set a timer to get notifications!"
+      description: "You'll be notified every hour — even with the browser closed!"
     });
   };
 
   const toggleTodo = (id: string) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    const todo = todos.find(t => t.id === id);
+    const updatedTodos = todos.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
     );
     setTodos(updatedTodos);
     saveTodos(updatedTodos);
+
+    if (todo && !todo.completed) {
+      // Marking complete — stop reminders
+      stopHourlyReminder(id);
+      sendSWMessage({ type: 'COMPLETE_REMINDER', id });
+    } else if (todo && todo.completed) {
+      // Unchecking — restart reminders
+      const updated = updatedTodos.find(t => t.id === id);
+      if (updated && Notification.permission === 'granted') {
+        startHourlyReminder(updated);
+      }
+      sendSWMessage({ type: 'UNCOMPLETE_REMINDER', id });
+    }
   };
 
   const deleteTodo = (id: string) => {
+    // Stop in-tab and SW background reminders
+    stopHourlyReminder(id);
+    sendSWMessage({ type: 'REMOVE_REMINDER', id });
+
     const updatedTodos = todos.filter(todo => todo.id !== id);
     setTodos(updatedTodos);
     saveTodos(updatedTodos);

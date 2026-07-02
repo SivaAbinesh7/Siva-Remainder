@@ -101,13 +101,13 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
   };
 
   return (
-    <Card className="w-full bg-white/90 backdrop-blur-sm border-none shadow-lg">
+    <Card className="w-full bg-white/90 backdrop-blur-sm border-none shadow-md">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between p-4 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-white">
-          <div className="flex items-center gap-3">
-            <SJAvatar size={40} />
+        <div className="flex items-center justify-between p-2 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-white">
+          <div className="flex items-center gap-2">
+            <SJAvatar size={30} />
             <div>
-              <h3 className="font-semibold text-gray-800">SJ Assistant</h3>
+              <h3 className="font-semibold text-gray-800 text-sm">SJ Assistant</h3>
               <p className="text-xs text-gray-500">Powered by AI</p>
             </div>
           </div>
@@ -118,26 +118,26 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
           )}
         </div>
 
-        <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-pink-25 to-white">
+        <div className="h-52 overflow-y-auto p-3 space-y-2 bg-gradient-to-b from-pink-25 to-white">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {message.role === 'assistant' && <SJAvatar size={28} />}
+              {message.role === 'assistant' && <SJAvatar size={22} />}
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 ${message.role === 'user'
+                className={`max-w-[75%] rounded-2xl px-3 py-1.5 ${message.role === 'user'
                   ? 'bg-pink-500 text-white rounded-br-md'
                   : 'bg-white border border-pink-100 text-gray-800 rounded-bl-md shadow-sm'
                   }`}
               >
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <p className="text-xs whitespace-pre-wrap leading-relaxed">{message.content}</p>
                 <p className={`text-xs mt-1 ${message.role === 'user' ? 'text-pink-100' : 'text-gray-400'}`}>
                   {formatTime(message.timestamp)}
                 </p>
               </div>
               {message.role === 'user' && (
-                <div className="w-7 h-7 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs font-semibold">
+                <div className="w-5 h-5 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs font-semibold">
                   S
                 </div>
               )}
@@ -146,7 +146,7 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
 
           {isLoading && (
             <div className="flex gap-2 justify-start">
-              <SJAvatar size={28} />
+              <SJAvatar size={22} />
               <div className="bg-white border border-pink-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
@@ -166,9 +166,9 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
         </div>
 
         {messages.length === 1 && (
-          <div className="px-4 py-2 border-t border-pink-100 bg-pink-25">
-            <p className="text-xs text-gray-600 mb-2">Try asking me about:</p>
-            <div className="flex flex-wrap gap-1">
+          <div className="px-3 py-1.5 border-t border-pink-100 bg-pink-25">
+            <p className="text-xs text-gray-600 mb-1">Try asking me about:</p>
+            <div className="flex flex-wrap gap-1 max-h-14 overflow-hidden">
               {[
                 "How to code in React",
                 "Explain productivity tips",
@@ -180,7 +180,7 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setInputMessage(suggestion)}
-                  className="text-xs h-7 border-pink-200 hover:bg-pink-50 text-gray-600"
+                  className="text-xs h-6 border-pink-200 hover:bg-pink-50 text-gray-600"
                 >
                   {suggestion}
                 </Button>
@@ -189,7 +189,7 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
           </div>
         )}
 
-        <div className="p-4 border-t border-pink-100 bg-white">
+        <div className="p-2 border-t border-pink-100 bg-white">
           <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Input
@@ -210,7 +210,7 @@ const VirtualAssistant: React.FC<VirtualAssistantProps> = ({ onClose }) => {
               onClick={sendMessage}
               disabled={isLoading || !inputMessage.trim()}
               size="sm"
-              className="rounded-full w-8 h-8 p-0 bg-pink-500 hover:bg-pink-600"
+              className="rounded-full w-7 h-7 p-0 bg-pink-500 hover:bg-pink-600"
             >
               <Send className="h-4 w-4" />
             </Button>

@@ -7,6 +7,9 @@ export interface Todo {
     notified?: boolean;
 }
 
+// Map to track active hourly interval IDs per todo
+const hourlyIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+
 export const requestNotificationPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
         console.log('Browser does not support notifications');
@@ -31,21 +34,13 @@ export const sendNotification = (title: string, body: string, vibrate = true) =>
             body,
             icon: '/favicon.ico',
             badge: '/favicon.ico',
-            tag: 'siva-reminder',
+            tag: `siva-reminder-${Date.now()}`,
             requireInteraction: true,
         });
 
-        // Vibrate if supported and requested
+        // Vibrate if supported
         if (vibrate && 'vibrate' in navigator) {
-            navigator.vibrate([200, 100, 200, 100, 200]); // Vibrate pattern
-        }
-
-        // Play notification sound
-        try {
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNggVabvt559NEAxPqOPwtmMcBjiP2fPKdSsFJHXI8N+RQAoUXLPq66hVFApGnt/yvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwGJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNwgZaLvt559MEAxQp+PwtmMcBjiR1/LMeSwGJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNggVabvt559NEAxPqOPwtmMcBjiP2fPKdSsFJHXI8N+RQAoUXLPq66hVFApGnt/yvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwGJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwGJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBSuBzvLYiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNggVabvt559NEAxPqOPwtmMcBjiP2fPKdSsGJHXI8N+RQAoUXLPq66hVFApGnt/yvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5e+uYBsBLIHO8tmJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwGJHfH79yRQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIFWm98OScTgwOUKvk8bllHAU2j9n0ynUrBSF0yO/gllkOClSm5O+uYBsBLIHO8tmJNwgZaLvt559NEA');
-            audio.play().catch(() => { });
-        } catch (e) {
-            // Audio not supported, ignore
+            navigator.vibrate([200, 100, 200, 100, 200]);
         }
 
         notification.onclick = () => {
@@ -58,6 +53,60 @@ export const sendNotification = (title: string, body: string, vibrate = true) =>
     return null;
 };
 
+/**
+ * Start sending an hourly reminder notification for a specific todo.
+ * Fires immediately once, then every 1 hour until stopped.
+ */
+export const startHourlyReminder = (todo: Todo) => {
+    // Don't start if already running for this todo
+    if (hourlyIntervals.has(todo.id)) return;
+
+    const fireNotification = () => {
+        sendNotification(
+            "Hi! It's from Siva's-reminder app 🌸",
+            `⏰ Do your reminder: "${todo.text}"`,
+            true
+        );
+    };
+
+    // Fire immediately on add
+    fireNotification();
+
+    // Then repeat every 1 hour (3600000 ms)
+    const intervalId = setInterval(fireNotification, 60 * 60 * 1000);
+    hourlyIntervals.set(todo.id, intervalId);
+};
+
+/**
+ * Stop the hourly reminder for a specific todo (on complete or delete).
+ */
+export const stopHourlyReminder = (todoId: string) => {
+    const intervalId = hourlyIntervals.get(todoId);
+    if (intervalId !== undefined) {
+        clearInterval(intervalId);
+        hourlyIntervals.delete(todoId);
+    }
+};
+
+/**
+ * Stop ALL active hourly reminders (e.g., on page unload).
+ */
+export const stopAllHourlyReminders = () => {
+    hourlyIntervals.forEach((id) => clearInterval(id));
+    hourlyIntervals.clear();
+};
+
+/**
+ * Restart hourly reminders for all incomplete todos on page reload.
+ */
+export const restoreHourlyReminders = (todos: Todo[]) => {
+    todos.forEach(todo => {
+        if (!todo.completed) {
+            startHourlyReminder(todo);
+        }
+    });
+};
+
 export const checkReminders = (todos: Todo[], onUpdate: (id: string, updates: Partial<Todo>) => void) => {
     const now = new Date();
 
@@ -66,12 +115,11 @@ export const checkReminders = (todos: Todo[], onUpdate: (id: string, updates: Pa
 
         const dueTime = new Date(todo.dueDate).getTime();
         const currentTime = now.getTime();
-        const reminderTime = todo.reminderTime || 5; // Default 5 minutes before
+        const reminderTime = todo.reminderTime || 5;
 
         const timeUntilDue = dueTime - currentTime;
-        const reminderThreshold = reminderTime * 60 * 1000; // Convert to milliseconds
+        const reminderThreshold = reminderTime * 60 * 1000;
 
-        // Check if we should send notification
         if (timeUntilDue <= reminderThreshold && timeUntilDue > 0) {
             const minutesLeft = Math.ceil(timeUntilDue / 60000);
             sendNotification(
@@ -80,9 +128,7 @@ export const checkReminders = (todos: Todo[], onUpdate: (id: string, updates: Pa
                 true
             );
             onUpdate(todo.id, { notified: true });
-        }
-        // Check if past due
-        else if (timeUntilDue <= 0 && timeUntilDue > -60000) { // Within 1 minute of being overdue
+        } else if (timeUntilDue <= 0 && timeUntilDue > -60000) {
             sendNotification(
                 '🚨 Reminder Overdue!',
                 `"${todo.text}" is now overdue!`,

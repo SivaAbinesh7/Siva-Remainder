@@ -3,19 +3,9 @@ import DateTime from '@/components/DateTime';
 import TodoList from '@/components/TodoList';
 import VirtualAssistant from '@/components/VirtualAssistant';
 import SJSymbol from '@/components/SJSymbol';
-import { Button } from '@/components/ui/button';
-import { useNotifications } from '@/hooks/useNotifications';
 
 const Index = () => {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const { showNotification } = useNotifications();
-
-  const handleTestNotification = () => {
-    showNotification('Hello Siva-07!', {
-      body: 'This is a test notification from your reminders app!',
-      requireInteraction: true
-    });
-  };
 
   return (
     <div className="min-h-screen">
@@ -23,15 +13,6 @@ const Index = () => {
         <header className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-pink-600 mb-1">Siva's Reminders</h1>
           <p className="text-pink-400">Your aesthetic daily companion</p>
-          
-          <div className="mt-4">
-            <Button 
-              onClick={handleTestNotification}
-              className="bg-pink-500 hover:bg-pink-600 text-white"
-            >
-              Test Notification
-            </Button>
-          </div>
         </header>
         
         <div className="space-y-6">
@@ -62,7 +43,7 @@ const Index = () => {
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
             onClick={() => setIsAssistantOpen(false)}
           />
-          <div className="fixed bottom-24 right-6 w-80 max-w-[calc(100vw-3rem)] z-50 animate-scale-in">
+          <div className="fixed bottom-20 right-4 w-64 max-w-[calc(100vw-2rem)] z-50 animate-scale-in">
             <VirtualAssistant onClose={() => setIsAssistantOpen(false)} />
           </div>
         </>
